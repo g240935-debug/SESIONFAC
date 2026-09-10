@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Caja de Polinomios · Colegio de Santander</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBF7EF;
+    --ink:#2B2118;
+    --ink-soft:#6B5D4F;
+    --mesa:#EFE3CE;
+    --mesa-line: rgba(43,33,24,0.07);
+    --panel:#FFFFFF;
+    --line:#E3D6BC;
+    --azul:#2C5AA0;
+    --azul-tint:#E4EAF3;
+    --rojo:#B23A2E;
+    --rojo-tint:#F3E3E0;
+    --amarillo:#D9A32B;
+    --amarillo-tint:#F7EDD8;
+    --negro:#2E2A24;
+    --negro-tint:#E7E4DE;
+    --verde:#3F8F5F;
+    --verde-tint:#E2EFE7;
+    --rosa:#D2649A;
+    --rosa-tint:#F5E3EC;
+    --shadow: 0 2px 0 rgba(43,33,24,0.12), 0 6px 14px rgba(43,33,24,0.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  header{
+    padding:16px 20px 8px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  header h1{
+    font-family:'Fredoka',sans-serif;
+    font-weight:600;
+    font-size:clamp(21px,4vw,28px);
+    margin:0;
+    letter-spacing:0.2px;
+  }
+  header .sub{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-top:2px;
+  }
+
+  .toolbar{
+    margin:0 20px 10px;
+    background:var(--panel);
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:10px 12px;
+    display:flex;
+    align-items:stretch;
+    gap:8px;
+    flex-wrap:wrap;
+    box-shadow:var(--shadow);
+  }
+  .piece-btn{
+    border:none;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    padding:8px 10px 7px;
+    border-radius:10px;
+    min-width:64px;
+    color:#fff;
+    font-family:'Inter',sans-serif;
+    transition: transform .08s ease, opacity .15s ease;
+  }
+  .piece-btn:active{ transform: translateY(2px); }
+  .piece-btn:disabled{ opacity:.4; cursor:not-allowed; transform:none; }
+  .piece-btn .plabel{
+    font-family:'Fredoka',sans-serif;
+    font-weight:600;
+    font-size:15px;
+  }
+  .piece-btn .pcount{
+    font-size:10.5px;
+    font-weight:600;
+    opacity:.9;
+  }
+  .piece-btn.azul{ background:var(--azul); }
+  .piece-btn.rojo{ background:var(--rojo); }
+  .piece-btn.amarillo{ background:var(--amarillo); }
+  .piece-btn.negro{ background:var(--negro); }
+  .piece-btn.verde{ background:var(--verde); }
+  .piece-btn.rosa{ background:var(--rosa); }
+
+  .toolbar-sep{
+    width:1px;
+    align-self:stretch;
+    background:var(--line);
+    margin:2px 2px;
+  }
+  .toolbar-actions{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:6px;
+    margin-left:auto;
+  }
+  .action-btn{
+    border:1.5px solid var(--line);
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:12.5px;
+    padding:6px 12px;
+    border-radius:9px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .action-btn:hover{ background:#fff; }
+  .grid-toggle{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+
+  .template-bar{
+    margin:0 20px 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .template-bar .tlabel{
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-right:2px;
+  }
+  .tpl-btn{
+    border:1.5px solid var(--line);
+    background:var(--panel);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    padding:6px 12px;
+    border-radius:20px;
+    cursor:pointer;
+  }
+  .tpl-btn.active{
+    background:var(--ink);
+    color:#fff;
+    border-color:var(--ink);
+  }
+
+  main{
+    flex:1;
+    margin:0 20px 12px;
+    position:relative;
+    border-radius:16px;
+    overflow:hidden;
+    border:1.5px solid var(--line);
+    min-height:340px;
+  }
+  #mesa{
+    position:absolute;
+    inset:0;
+    background:var(--mesa);
+    background-image:
+      linear-gradient(var(--mesa-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--mesa-line) 1px, transparent 1px);
+    background-size:32px 32px;
+    touch-action:none;
+  }
+  #mesa.no-grid{ background-image:none; }
+
+  .empty-hint{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:20px;
+    pointer-events:none;
+    color:var(--ink-soft);
+    font-size:13.5px;
+    line-height:1.55;
+    max-width:360px;
+    margin:auto;
+  }
+
+  .tile{
+    position:absolute;
+    top:0; left:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:5px;
+    font-family:'Fredoka',sans-serif;
+    font-weight:600;
+    color:#fff;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.18), 0 4px 8px rgba(43,33,24,0.20);
+    cursor:grab;
+    user-select:none;
+    -webkit-user-select:none;
+    border:1px solid rgba(0,0,0,0.12);
+  }
+  .tile.dragging{
+    cursor:grabbing;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.18), 0 10px 18px rgba(43,33,24,0.28);
+  }
+  .tile .del{
+    position:absolute;
+    top:-8px; right:-8px;
+    width:18px; height:18px;
+    border-radius:50%;
+    background:var(--ink);
+    color:#fff;
+    font-size:11px;
+    line-height:18px;
+    text-align:center;
+    cursor:pointer;
+    box-shadow:0 1px 3px rgba(0,0,0,0.3);
+  }
+  .tile.one .del{ width:14px; height:14px; font-size:9px; line-height:14px; top:-6px; right:-6px; }
+
+  .tile .rot{
+    position:absolute;
+    bottom:-8px; right:-8px;
+    width:18px; height:18px;
+    border-radius:50%;
+    background:#fff;
+    color:var(--ink);
+    font-size:11px;
+    line-height:17px;
+    text-align:center;
+    cursor:pointer;
+    box-shadow:0 1px 3px rgba(0,0,0,0.3);
+    border:1px solid var(--line);
+  }
+  .tile.one .rot{ display:none; }
+
+  .guide{
+    position:absolute;
+    border:2.5px dashed rgba(43,33,24,0.45);
+    border-radius:4px;
+    pointer-events:none;
+    z-index:1;
+    background:rgba(255,255,255,0.18);
+  }
+  .guide .glab{
+    position:absolute;
+    font-family:'Fredoka',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .guide .glab.top{ top:-22px; left:50%; transform:translateX(-50%); }
+  .guide .glab.left{ left:-10px; top:50%; transform:translate(-100%,-50%) rotate(-90deg); transform-origin:right center; }
+  .guide .inner-target{
+    position:absolute;
+    border:2.5px dashed rgba(178,58,46,0.65);
+    background:rgba(178,58,46,0.08);
+    border-radius:3px;
+  }
+  .guide .inner-target .glab2{
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    font-family:'Fredoka',sans-serif;
+    font-weight:600;
+    font-size:11px;
+    color:var(--rojo);
+  }
+
+  .tile.x2{ background:var(--azul); }
+  .tile.y2{ background:var(--rojo); }
+  .tile.xy{ background:var(--amarillo); }
+  .tile.xt{ background:var(--negro); font-size:12px; }
+  .tile.yt{ background:var(--verde); font-size:12px; }
+  .tile.one{ background:var(--rosa); }
+
+  .toast{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:#fff;
+    padding:9px 16px;
+    border-radius:10px;
+    font-size:13px;
+    font-weight:500;
+    opacity:0;
+    transition: opacity .25s ease, transform .25s ease;
+    pointer-events:none;
+    z-index:100;
+    max-width:88vw;
+    text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  details.help{
+    margin:0 20px 20px;
+    background:var(--panel);
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:2px 16px;
+  }
+  details.help summary{
+    cursor:pointer;
+    font-family:'Fredoka',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    padding:12px 0;
+    list-style:none;
+  }
+  details.help summary::-webkit-details-marker{ display:none; }
+  details.help summary::before{ content:"＋ "; color:var(--azul); }
+  details.help[open] summary::before{ content:"－ "; }
+  .help-body{ padding-bottom:16px; font-size:13.5px; line-height:1.6; color:var(--ink-soft); }
+  .help-body h4{ font-family:'Fredoka',sans-serif; color:var(--ink); font-size:14px; margin:16px 0 4px; }
+  .help-body p{ margin:4px 0; }
+  .legend{ display:flex; gap:16px; flex-wrap:wrap; margin:10px 0 16px; }
+  .legend-item{ display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink); }
+  .swatch{ width:18px;height:18px;border-radius:4px;flex:none; }
+  .caso{
+    border-top:1px solid var(--line);
+    padding-top:10px;
+    margin-top:10px;
+  }
+  .caso .expr{
+    font-family:'Fredoka',sans-serif;
+    color:var(--ink);
+    font-weight:600;
+    font-size:14px;
+  }
+
+  @media (max-width:560px){
+    header{ padding:12px 14px 6px; }
+    .toolbar, main, details.help{ margin-left:14px; margin-right:14px; }
+    .piece-btn{ min-width:54px; padding:6px 6px 6px; }
+    .toolbar-actions{ margin-left:0; flex-direction:row; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Caja de Polinomios</h1>
+    <div class="sub">Grado 8-2 · Colegio de Santander — versión digital de respaldo, fiel al material de Cardona Herrera (2018)</div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <button class="piece-btn azul" onclick="addTile('x2')" id="btn-x2">
+    <span class="plabel">x²</span>
+    <span class="pcount" id="count-x2">4 / 4</span>
+  </button>
+  <button class="piece-btn rojo" onclick="addTile('y2')" id="btn-y2">
+    <span class="plabel">y²</span>
+    <span class="pcount" id="count-y2">7 / 7</span>
+  </button>
+  <button class="piece-btn amarillo" onclick="addTile('xy')" id="btn-xy">
+    <span class="plabel">xy</span>
+    <span class="pcount" id="count-xy">4 / 4</span>
+  </button>
+  <button class="piece-btn negro" onclick="addTile('xt')" id="btn-xt">
+    <span class="plabel">x</span>
+    <span class="pcount" id="count-xt">15 / 15</span>
+  </button>
+  <button class="piece-btn verde" onclick="addTile('yt')" id="btn-yt">
+    <span class="plabel">y</span>
+    <span class="pcount" id="count-yt">15 / 15</span>
+  </button>
+  <button class="piece-btn rosa" onclick="addTile('one')" id="btn-one">
+    <span class="plabel">1</span>
+    <span class="pcount" id="count-one">70 / 70</span>
+  </button>
+
+  <div class="toolbar-sep"></div>
+  <div class="toolbar-actions">
+    <button class="action-btn" onclick="clearMesa()">Vaciar mesa</button>
+    <label class="grid-toggle">
+      <input type="checkbox" id="gridToggle" checked onchange="toggleGrid()">
+      Cuadrícula
+    </label>
+  </div>
+</div>
+
+<div class="template-bar">
+  <span class="tlabel">Rectángulo guía:</span>
+  <button class="tpl-btn active" onclick="setTemplate('none', this)">Ninguno</button>
+  <button class="tpl-btn" onclick="setTemplate('c1', this)">Caso 1 · x² + xy</button>
+  <button class="tpl-btn" onclick="setTemplate('c2', this)">Caso 2 · xy+3x+2y+6</button>
+  <button class="tpl-btn" onclick="setTemplate('c3', this)">Caso 3 · x² − y²</button>
+  <button class="tpl-btn" onclick="setTemplate('c4', this)">Caso 4 · x² + 2x + 1</button>
+  <button class="tpl-btn" onclick="setTemplate('c5', this)">Caso 5 · x² + 5x + 6</button>
+  <button class="tpl-btn" onclick="setTemplate('c6', this)">Caso 6 · 2x² + 5x + 2</button>
+</div>
+
+<main>
+  <div id="mesa">
+    <div class="empty-hint" id="emptyHint">
+      Toca una pieza de arriba para ponerla sobre la mesa.<br>
+      Arrástrala para ubicarla, gírala con el botón ⟳ si necesitas cambiarle la orientación,
+      y arrastra una pieza encima de otra para representar una resta de áreas.
+    </div>
+  </div>
+</main>
+
+<details class="help">
+  <summary>¿Cómo se usa esta caja?</summary>
+  <div class="help-body">
+    <div class="legend">
+      <div class="legend-item"><span class="swatch" style="background:var(--azul)"></span> x² — cuadrado azul</div>
+      <div class="legend-item"><span class="swatch" style="background:var(--rojo)"></span> y² — cuadrado rojo</div>
+      <div class="legend-item"><span class="swatch" style="background:var(--amarillo)"></span> xy — rectángulo amarillo</div>
+      <div class="legend-item"><span class="swatch" style="background:var(--negro)"></span> x — rectángulo negro</div>
+      <div class="legend-item"><span class="swatch" style="background:var(--verde)"></span> y — rectángulo verde</div>
+      <div class="legend-item"><span class="swatch" style="background:var(--rosa)"></span> 1 — cuadrado rosa</div>
+    </div>
+    <p>Las piezas guardan las mismas proporciones que la caja física de papel fomi: el lado x mide más que el lado y, y ambos son múltiplos del lado de la unidad. La cantidad de piezas disponibles de cada color también es la misma que en la caja física, así que si se agotan, es momento de pensar si de verdad se necesitan tantas para el polinomio que estás armando.</p>
+    <p>Para sumar, coloca las piezas una junto a otra hasta cubrir el área completa. Para restar, coloca la pieza que se resta <strong>encima</strong> de la que representa el total: el área que queda visible alrededor es el resultado de la resta. Al tomar una pieza, esta sube automáticamente al frente, así que puedes reordenar cuál pieza cubre a cuál con solo tocarla. Usa el botón ⟳ de cada pieza para girarla 90° cuando necesites cambiar su orientación dentro de una figura.</p>
+    <p>Arriba de la mesa puedes activar un <strong>rectángulo guía</strong> para cada caso: es el contorno punteado del rectángulo final que deben formar las piezas, con sus lados etiquetados. La idea es llenarlo por completo, como si fuera un rompecabezas, sin dejar huecos ni piezas de sobra. Los casos 5 y 6 del rectángulo guía usan ejemplos con coeficientes positivos, más sencillos de armar directamente con las piezas; los ejemplos con términos negativos que se explican abajo se trabajan mejor guiados por tu profesor en el tablero.</p>
+    <p>Para factorizar, parte de las piezas ya organizadas dentro de una región y acomódalas hasta formar un rectángulo completo, sin huecos ni piezas de sobra. Los dos lados de ese rectángulo son los factores del polinomio.</p>
+
+    <div class="caso">
+      <h4>Caso 1 · Factor común</h4>
+      <p class="expr">x² + xy</p>
+      <p>Arma un cuadrado x² y, junto a uno de sus lados, un rectángulo xy que comparta ese mismo lado x. El lado común a ambas piezas es el factor común.</p>
+    </div>
+    <div class="caso">
+      <h4>Caso 2 · Factor común por agrupación</h4>
+      <p class="expr">xy + 3x + 2y + 6</p>
+      <p>Arma las cuatro piezas correspondientes (xy, tres x, dos y, seis unidades) y agrúpalas hasta formar un solo rectángulo. Los dos lados de ese rectángulo son los factores.</p>
+    </div>
+    <div class="caso">
+      <h4>Caso 3 · Diferencia de cuadrados</h4>
+      <p class="expr">x² − y²</p>
+      <p>Coloca el cuadrado y² sobre una esquina del cuadrado x². El área que queda visible se puede reacomodar en un rectángulo cuyos lados son (x + y) y (x − y).</p>
+    </div>
+    <div class="caso">
+      <h4>Caso 4 · Trinomio cuadrado perfecto</h4>
+      <p class="expr">x² + 2x + 1</p>
+      <p>Arma un cuadrado x², dos rectángulos x junto a dos de sus lados, y una unidad en la esquina que falta. El resultado es un cuadrado más grande: su lado es (x + 1).</p>
+    </div>
+    <div class="caso">
+      <h4>Caso 5 · Trinomio de la forma x² + bx + c</h4>
+      <p class="expr">x² − 2x − 3</p>
+      <p>Cuando hay términos negativos, en la caja física esto se resuelve quitando piezas x del cuadrado x² y compensando con una pieza adicional cuando el reacomodo lo exige, hasta lograr un rectángulo limpio. Trabaja este caso guiado por tu profesor.</p>
+    </div>
+    <div class="caso">
+      <h4>Caso 6 · Trinomio de la forma ax² + bx + c</h4>
+      <p class="expr">2x² + 5x + 2</p>
+      <p>Se usan dos cuadrados x², varias piezas x y varias unidades, acomodadas hasta formar un solo rectángulo. Este es el caso más exigente: tómate tu tiempo y prueba distintos acomodos.</p>
+    </div>
+
+    <p>Si olvidaste tu caja física en clase, usa esta versión para seguir el mismo trabajo que tus compañeros mientras la traes de nuevo.</p>
+  </div>
+</details>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const mesa = document.getElementById('mesa');
+  const emptyHint = document.getElementById('emptyHint');
+  const toastEl = document.getElementById('toast');
+
+  // Escala: 8 px por cm, igual proporción que el material físico (13cm x 8cm x 2cm)
+  const SIZES = {
+    x2: {w:104, h:104, label:'x²', total:4},
+    y2: {w:64,  h:64,  label:'y²', total:7},
+    xy: {w:104, h:64,  label:'xy', total:4},
+    xt: {w:104, h:16,  label:'x',  total:15},
+    yt: {w:64,  h:16,  label:'y',  total:15},
+    one:{w:16,  h:16,  label:'',  total:70},
+  };
+
+  const available = {};
+  Object.keys(SIZES).forEach(k => available[k] = SIZES[k].total);
+
+  let tiles = [];
+  let uid = 1;
+  let zTop = 1;
+  let cascade = 0;
+
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toastEl.classList.remove('show'), 1700);
+  }
+
+  function updateCounters(){
+    Object.keys(SIZES).forEach(k=>{
+      const el = document.getElementById('count-' + k);
+      const btn = document.getElementById('btn-' + k);
+      if(el) el.textContent = `${available[k]} / ${SIZES[k].total}`;
+      if(btn) btn.disabled = available[k] <= 0;
+    });
+  }
+
+  function addTile(type){
+    if(available[type] <= 0){
+      showToast('No quedan más piezas de este tipo en la caja.');
+      return;
+    }
+    available[type]--;
+    updateCounters();
+
+    const startX = 16 + (cascade % 7) * 14;
+    const startY = 16 + (cascade % 7) * 14;
+    cascade++;
+
+    const t = { id: uid++, type, x: startX, y: startY, rotated:false };
+    tiles.push(t);
+
+    const el = document.createElement('div');
+    el.className = `tile ${type}`;
+    el.style.width = SIZES[type].w + 'px';
+    el.style.height = SIZES[type].h + 'px';
+    el.style.transform = `translate(${t.x}px, ${t.y}px)`;
+    el.style.zIndex = ++zTop;
+    el.textContent = SIZES[type].label;
+
+    const del = document.createElement('div');
+    del.className = 'del';
+    del.textContent = '×';
+    del.addEventListener('pointerdown', (e)=> e.stopPropagation());
+    del.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      removeTile(t.id);
+    });
+    el.appendChild(del);
+
+    const rot = document.createElement('div');
+    rot.className = 'rot';
+    rot.textContent = '⟳';
+    rot.addEventListener('pointerdown', (e)=> e.stopPropagation());
+    rot.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      rotateTile(t);
+    });
+    el.appendChild(rot);
+
+    t.el = el;
+    mesa.appendChild(el);
+    makeDraggable(el, t);
+    refresh();
+  }
+
+  function rotateTile(t){
+    t.rotated = !t.rotated;
+    const base = SIZES[t.type];
+    const w = t.rotated ? base.h : base.w;
+    const h = t.rotated ? base.w : base.h;
+    const mesaRect = mesa.getBoundingClientRect();
+    t.x = Math.max(0, Math.min(t.x, mesaRect.width - w));
+    t.y = Math.max(0, Math.min(t.y, mesaRect.height - h));
+    t.el.style.width = w + 'px';
+    t.el.style.height = h + 'px';
+    t.el.style.transform = `translate(${t.x}px, ${t.y}px)`;
+    t.el.style.zIndex = ++zTop;
+  }
+
+  function removeTile(id){
+    const idx = tiles.findIndex(x => x.id === id);
+    if(idx === -1) return;
+    const t = tiles[idx];
+    available[t.type]++;
+    updateCounters();
+    t.el.style.transition = 'opacity .15s ease, transform .15s ease';
+    t.el.style.opacity = '0';
+    setTimeout(()=> t.el.remove(), 150);
+    tiles.splice(idx,1);
+    refresh();
+  }
+
+  function clearMesa(){
+    tiles.forEach(t => { available[t.type]++; t.el.remove(); });
+    tiles = [];
+    cascade = 0;
+    updateCounters();
+    refresh();
+  }
+
+  function toggleGrid(){
+    mesa.classList.toggle('no-grid', !document.getElementById('gridToggle').checked);
+  }
+
+  function makeDraggable(el, t){
+    let dragging = false;
+    let moved = false;
+    let startPX, startPY, startX, startY;
+
+    el.addEventListener('pointerdown', (e)=>{
+      dragging = true;
+      moved = false;
+      el.style.zIndex = ++zTop;   // traer al frente al tocar
+      el.classList.add('dragging');
+      el.setPointerCapture(e.pointerId);
+      startPX = e.clientX; startPY = e.clientY;
+      startX = t.x; startY = t.y;
+    });
+
+    el.addEventListener('pointermove', (e)=>{
+      if(!dragging) return;
+      const mesaRect = mesa.getBoundingClientRect();
+      const w = el.offsetWidth, h = el.offsetHeight;
+      let dx = e.clientX - startPX, dy = e.clientY - startPY;
+      if(Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+      let nx = startX + dx;
+      let ny = startY + dy;
+      nx = Math.max(0, Math.min(nx, mesaRect.width - w));
+      ny = Math.max(0, Math.min(ny, mesaRect.height - h));
+      t.x = nx; t.y = ny;
+      el.style.transform = `translate(${nx}px, ${ny}px)`;
+    });
+
+    function endDrag(){
+      if(!dragging) return;
+      dragging = false;
+      el.classList.remove('dragging');
+    }
+    el.addEventListener('pointerup', endDrag);
+    el.addEventListener('pointercancel', endDrag);
+  }
+
+  function refresh(){
+    emptyHint.style.display = tiles.length ? 'none' : 'flex';
+  }
+
+  // ---------- Rectángulo guía (plantilla tipo rompecabezas) ----------
+  const U = 16, Y = 64, X = 104; // mismas unidades que SIZES
+
+  const TEMPLATES = {
+    none: null,
+    c1: { w: X, h: X + Y, top: 'x', left: 'x + y' },
+    c2: { w: X + 2*U, h: Y + 3*U, top: 'x + 2', left: 'y + 3' },
+    c4: { w: X + U, h: X + U, top: 'x + 1', left: 'x + 1' },
+    c5: { w: X + 2*U, h: X + 3*U, top: 'x + 2', left: 'x + 3' },
+    c6: { w: 2*X + U, h: X + 2*U, top: '2x + 1', left: 'x + 2' },
+  };
+
+  let guideEl = null;
+
+  function clearGuide(){
+    if(guideEl){ guideEl.remove(); guideEl = null; }
+  }
+
+  function setTemplate(key, btnEl){
+    document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+    clearGuide();
+    if(key === 'none') return;
+
+    if(key === 'c3'){
+      // Caso especial: diferencia de cuadrados -> cuadrado x² con hueco objetivo y² en una esquina
+      const g = document.createElement('div');
+      g.className = 'guide';
+      g.style.left = '24px'; g.style.top = '30px';
+      g.style.width = X + 'px'; g.style.height = X + 'px';
+      g.innerHTML = `
+        <span class="glab top">x</span>
+        <span class="glab left">x</span>
+        <div class="inner-target" style="left:0; top:0; width:${Y}px; height:${Y}px;">
+          <span class="glab2">y²</span>
+        </div>`;
+      mesa.appendChild(g);
+      guideEl = g;
+      showToast('Coloca la pieza y² sobre el hueco marcado dentro del cuadrado x².');
+      return;
+    }
+
+    const tpl = TEMPLATES[key];
+    if(!tpl) return;
+    const g = document.createElement('div');
+    g.className = 'guide';
+    g.style.left = '28px'; g.style.top = '32px';
+    g.style.width = tpl.w + 'px';
+    g.style.height = tpl.h + 'px';
+    g.innerHTML = `<span class="glab top">${tpl.top}</span><span class="glab left">${tpl.left}</span>`;
+    mesa.appendChild(g);
+    guideEl = g;
+    showToast('Arrastra las piezas dentro del rectángulo punteado hasta llenarlo por completo.');
+  }
+
+  updateCounters();
+</script>
+</body>
+</html>
