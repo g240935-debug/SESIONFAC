@@ -269,30 +269,18 @@
     z-index:1;
     background:rgba(255,255,255,0.18);
   }
-  .guide .glab{
-    position:absolute;
-    font-family:'Fredoka',sans-serif;
-    font-weight:600;
-    font-size:13px;
-    color:var(--ink-soft);
-    white-space:nowrap;
+  
+  /* Ocultar etiquetas de texto de las medidas en las guías */
+  .guide .glab, 
+  .guide .inner-target .glab2 {
+    display: none !important;
   }
-  .guide .glab.top{ top:-22px; left:50%; transform:translateX(-50%); }
-  .guide .glab.left{ left:-10px; top:50%; transform:translate(-100%,-50%) rotate(-90deg); transform-origin:right center; }
+
   .guide .inner-target{
     position:absolute;
     border:2.5px dashed rgba(178,58,46,0.65);
     background:rgba(178,58,46,0.08);
     border-radius:3px;
-  }
-  .guide .inner-target .glab2{
-    position:absolute;
-    top:50%; left:50%;
-    transform:translate(-50%,-50%);
-    font-family:'Fredoka',sans-serif;
-    font-weight:600;
-    font-size:11px;
-    color:var(--rojo);
   }
 
   .tile.x2{ background:var(--azul); }
@@ -620,7 +608,7 @@
     el.addEventListener('pointerdown', (e)=>{
       dragging = true;
       moved = false;
-      el.style.zIndex = ++zTop;   // traer al frente al tocar
+      el.style.zIndex = ++zTop;
       el.classList.add('dragging');
       el.setPointerCapture(e.pointerId);
       startPX = e.clientX; startPY = e.clientY;
@@ -655,7 +643,7 @@
   }
 
   // ---------- Rectángulo guía (plantilla tipo rompecabezas) ----------
-  const U = 16, Y = 64, X = 104; // mismas unidades que SIZES
+  const U = 16, Y = 64, X = 104;
 
   const TEMPLATES = {
     none: null,
@@ -679,7 +667,6 @@
     if(key === 'none') return;
 
     if(key === 'c3'){
-      // Caso especial: diferencia de cuadrados -> cuadrado x² con hueco objetivo y² en una esquina
       const g = document.createElement('div');
       g.className = 'guide';
       g.style.left = '24px'; g.style.top = '30px';
