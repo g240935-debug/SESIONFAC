@@ -224,13 +224,27 @@
     cursor:grab;
     user-select:none;
     -webkit-user-select:none;
+    -webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:none;
+    transform-origin:50% 50%;
+    transition: transform .12s ease;
     border:1px solid rgba(0,0,0,0.12);
   }
   .tile.dragging{
     cursor:grabbing;
+    transition:none;
     box-shadow: 0 6px 0 rgba(0,0,0,0.18), 0 10px 18px rgba(43,33,24,0.28);
   }
+  /* Pieza seleccionada: anillo visible; el tamaño lo ajusta el script (scale) */
+  .tile.selected{
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink), 0 8px 16px rgba(43,33,24,0.28);
+  }
+
+  /* Los botones × y ⟳ solo aparecen en la pieza seleccionada,
+     así no tapan las piezas pequeñas cuando se quieren mover */
   .tile .del{
+    display:none;
     position:absolute;
     top:-8px; right:-8px;
     width:18px; height:18px;
@@ -243,9 +257,12 @@
     cursor:pointer;
     box-shadow:0 1px 3px rgba(0,0,0,0.3);
   }
-  .tile.one .del{ width:14px; height:14px; font-size:9px; line-height:14px; top:-6px; right:-6px; }
+  .tile.selected .del{ display:block; }
+  /* En la unidad (16 px) el × queda afuera de la esquina, casi sin tapar la pieza */
+  .tile.one .del{ width:16px; height:16px; font-size:10px; line-height:16px; top:-12px; right:-12px; }
 
   .tile .rot{
+    display:none;
     position:absolute;
     bottom:-8px; right:-8px;
     width:18px; height:18px;
@@ -259,7 +276,24 @@
     box-shadow:0 1px 3px rgba(0,0,0,0.3);
     border:1px solid var(--line);
   }
-  .tile.one .rot{ display:none; }
+  .tile.selected:not(.one) .rot{ display:block; }
+
+  /* Zona de toque ampliada para los botones de las piezas grandes */
+  .tile:not(.one) .del::after,
+  .tile .rot::after{
+    content:'';
+    position:absolute;
+    inset:-6px;
+  }
+
+  /* Zona de toque ampliada para la unidad en pantallas táctiles */
+  @media (pointer:coarse){
+    .tile.one::before{
+      content:'';
+      position:absolute;
+      inset:-4px;
+    }
+  }
 
   .guide{
     position:absolute;
@@ -414,8 +448,9 @@
   <div id="mesa">
     <div class="empty-hint" id="emptyHint">
       Toca una pieza de arriba para ponerla sobre la mesa.<br>
-      Arrástrala para ubicarla, gírala con el botón ⟳ si necesitas cambiarle la orientación,
-      y arrastra una pieza encima de otra para representar una resta de áreas.
+      Toca una pieza de la mesa para seleccionarla: se agranda y aparecen los botones ⟳ (girar) y × (quitar).
+      Arrástrala para ubicarla y toca un espacio vacío para soltarla.
+      Arrastra una pieza encima de otra para representar una resta de áreas.
     </div>
   </div>
 </main>
@@ -432,7 +467,7 @@
       <div class="legend-item"><span class="swatch" style="background:var(--rosa)"></span> 1 — cuadrado rosa</div>
     </div>
     <p>Las piezas guardan las mismas proporciones que la caja física de papel fomi o cartulina: el lado x mide más que el lado y, y ambos son múltiplos del lado de la unidad. La cantidad de piezas disponibles de cada color también es la misma que en la caja física, así que si se agotan, es momento de pensar si de verdad se necesitan tantas para el polinomio que estás armando.</p>
-    <p>Para sumar, coloca las piezas una junto a otra hasta cubrir el área completa. Para restar, coloca la pieza que se resta <strong>encima</strong> de la que representa el total: el área que queda visible alrededor es el resultado de la resta. Al tomar una pieza, esta sube automáticamente al frente, así que puedes reordenar cuál pieza cubre a cuál con solo tocarla. Usa el botón ⟳ de cada pieza para girarla 90° cuando necesites cambiar su orientación dentro de una figura.</p>
+    <p>Para sumar, coloca las piezas una junto a otra hasta cubrir el área completa. Para restar, coloca la pieza que se resta <strong>encima</strong> de la que representa el total: el área que queda visible alrededor es el resultado de la resta. Al tomar una pieza, esta sube automáticamente al frente, así que puedes reordenar cuál pieza cubre a cuál con solo tocarla. Al tocar una pieza queda <strong>seleccionada</strong>: se ve un poco más grande y le aparecen el botón ⟳, que la gira 90° cuando necesites cambiar su orientación dentro de una figura, y el botón ×, que la devuelve a la caja. Toca un espacio vacío de la mesa para quitar la selección; las piezas vuelven a su tamaño real.</p>
     <p>Arriba de la mesa puedes activar un <strong>rectángulo guía</strong> para cada caso: es el contorno punteado del rectángulo final que deben formar las piezas, con sus lados etiquetados. La idea es llenarlo por completo, como si fuera un rompecabezas, sin dejar huecos ni piezas de sobra. Los casos 5 y 6 del rectángulo guía usan ejemplos con coeficientes positivos, más sencillos de armar directamente con las piezas; los ejemplos con términos negativos que se explican abajo se trabajan mejor guiados por tu profesor en el tablero.</p>
     <p>Para factorizar, parte de las piezas ya organizadas dentro de una región y acomódalas hasta formar un rectángulo completo, sin huecos ni piezas de sobra. Los dos lados de ese rectángulo son los factores del polinomio.</p>
 
@@ -495,6 +530,41 @@
   let uid = 1;
   let zTop = 1;
   let cascade = 0;
+  let selected = null;
+
+  // Cuánto se agranda la pieza seleccionada (más en celular, y más aún la unidad)
+  const touchMQ = window.matchMedia('(pointer: coarse), (max-width: 560px)');
+  function selScale(t){
+    const unit = t.type === 'one';
+    if(touchMQ.matches) return unit ? 1.8 : 1.3;
+    return unit ? 1.5 : 1.1;
+  }
+
+  // Posición + escala en un solo transform (así la traslación no se multiplica por la escala)
+  function place(t){
+    const s = (selected === t) ? selScale(t) : 1;
+    t.el.style.transform = `translate(${t.x}px, ${t.y}px) scale(${s})`;
+  }
+
+  function select(t){
+    if(selected === t) return;
+    if(selected){
+      const prev = selected;
+      selected = null;
+      prev.el.classList.remove('selected');
+      place(prev);
+    }
+    if(t){
+      selected = t;
+      t.el.classList.add('selected');
+      place(t);
+    }
+  }
+
+  // Tocar un espacio vacío de la mesa quita la selección
+  mesa.addEventListener('pointerdown', (e)=>{
+    if(!e.target.closest('.tile')) select(null);
+  });
 
   function showToast(msg){
     toastEl.textContent = msg;
@@ -531,7 +601,6 @@
     el.className = `tile ${type}`;
     el.style.width = SIZES[type].w + 'px';
     el.style.height = SIZES[type].h + 'px';
-    el.style.transform = `translate(${t.x}px, ${t.y}px)`;
     el.style.zIndex = ++zTop;
     el.textContent = SIZES[type].label;
 
@@ -556,6 +625,7 @@
     el.appendChild(rot);
 
     t.el = el;
+    place(t);
     mesa.appendChild(el);
     makeDraggable(el, t);
     refresh();
@@ -571,7 +641,7 @@
     t.y = Math.max(0, Math.min(t.y, mesaRect.height - h));
     t.el.style.width = w + 'px';
     t.el.style.height = h + 'px';
-    t.el.style.transform = `translate(${t.x}px, ${t.y}px)`;
+    place(t);
     t.el.style.zIndex = ++zTop;
   }
 
@@ -579,6 +649,7 @@
     const idx = tiles.findIndex(x => x.id === id);
     if(idx === -1) return;
     const t = tiles[idx];
+    if(selected === t) selected = null;
     available[t.type]++;
     updateCounters();
     t.el.style.transition = 'opacity .15s ease, transform .15s ease';
@@ -589,6 +660,7 @@
   }
 
   function clearMesa(){
+    selected = null;
     tiles.forEach(t => { available[t.type]++; t.el.remove(); });
     tiles = [];
     cascade = 0;
@@ -610,6 +682,7 @@
       moved = false;
       el.style.zIndex = ++zTop;
       el.classList.add('dragging');
+      select(t);
       el.setPointerCapture(e.pointerId);
       startPX = e.clientX; startPY = e.clientY;
       startX = t.x; startY = t.y;
@@ -626,7 +699,7 @@
       nx = Math.max(0, Math.min(nx, mesaRect.width - w));
       ny = Math.max(0, Math.min(ny, mesaRect.height - h));
       t.x = nx; t.y = ny;
-      el.style.transform = `translate(${nx}px, ${ny}px)`;
+      place(t);
     });
 
     function endDrag(){
@@ -699,4 +772,4 @@
   updateCounters();
 </script>
 </body>
-</html>
+</html
