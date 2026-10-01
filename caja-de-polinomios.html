@@ -672,6 +672,17 @@
     mesa.classList.toggle('no-grid', !document.getElementById('gridToggle').checked);
   }
 
+  // ---------- Arrastre con "imán" ----------
+  // Las piezas conservan su tamaño visual, pero al acercarse a una
+  // posición múltiplo de 16 px se acomodan suavemente en ella.
+  const SNAP = 16;
+  const SNAP_RADIUS = 10;
+
+  function magneticSnap(value){
+    const nearest = Math.round(value / SNAP) * SNAP;
+    return Math.abs(value - nearest) <= SNAP_RADIUS ? nearest : value;
+  }
+
   function makeDraggable(el, t){
     let dragging = false;
     let moved = false;
@@ -690,15 +701,29 @@
 
     el.addEventListener('pointermove', (e)=>{
       if(!dragging) return;
+
       const mesaRect = mesa.getBoundingClientRect();
       const w = el.offsetWidth, h = el.offsetHeight;
-      let dx = e.clientX - startPX, dy = e.clientY - startPY;
+
+      let dx = e.clientX - startPX;
+      let dy = e.clientY - startPY;
+
       if(Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+
       let nx = startX + dx;
       let ny = startY + dy;
+
+      // El "imán" actúa cerca de las posiciones de la cuadrícula
+      // física de la caja (16 px = una unidad).
+      nx = magneticSnap(nx);
+      ny = magneticSnap(ny);
+
+      // Mantener siempre la pieza dentro de la mesa.
       nx = Math.max(0, Math.min(nx, mesaRect.width - w));
       ny = Math.max(0, Math.min(ny, mesaRect.height - h));
-      t.x = nx; t.y = ny;
+
+      t.x = nx;
+      t.y = ny;
       place(t);
     });
 
@@ -706,7 +731,23 @@
       if(!dragging) return;
       dragging = false;
       el.classList.remove('dragging');
+
+      // Al soltar, hacemos un último ajuste para que quede perfectamente
+      // alineada aunque el dedo haya terminado ligeramente fuera del radio.
+      const mesaRect = mesa.getBoundingClientRect();
+      const w = el.offsetWidth, h = el.offsetHeight;
+
+      let nx = magneticSnap(t.x);
+      let ny = magneticSnap(t.y);
+
+      nx = Math.max(0, Math.min(nx, mesaRect.width - w));
+      ny = Math.max(0, Math.min(ny, mesaRect.height - h));
+
+      t.x = nx;
+      t.y = ny;
+      place(t);
     }
+
     el.addEventListener('pointerup', endDrag);
     el.addEventListener('pointercancel', endDrag);
   }
@@ -772,4 +813,4 @@
   updateCounters();
 </script>
 </body>
-</html
+</html>
